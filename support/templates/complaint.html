@@ -3,15 +3,29 @@
 {% block content %}
 <div class="intake">
   <section class="intro">
-    <p class="eyebrow">CUSTOMER SUPPORT</p>
-    <h1>How can we help?</h1>
-    <p>Report a Wi-Fi, network, or other IT issue. Our support team will review your complaint and decide whether it can be resolved remotely or needs a visit.</p>
+    <div class="intro-copy">
+      <p class="eyebrow">Customer support</p>
+      <h1>How can<br class="desktop-break"> we <em>help?</em></h1>
+      <p>Tell us what’s happening with your Wi-Fi, network, or other IT equipment so we can get you back up and running.</p>
+    </div>
+    <div class="support-note">
+      <span class="note-symbol" aria-hidden="true">↗</span>
+      <div><strong>Remote help or an on-site visit</strong><p>Our team will review your request and choose the right service for your issue.</p></div>
+    </div>
   </section>
-  <section class="panel">
-    <h2>Submit a complaint</h2>
-    <form method="post">
+  <section class="panel complaint-panel" aria-labelledby="complaint-title">
+    <h2 id="complaint-title">Submit a complaint</h2>
+    <p class="form-intro">Share your contact details and describe the issue.</p>
+    <form method="post" class="complaint-form">
       {% csrf_token %}
-      {{ form.as_p }}
+      {{ form.non_field_errors }}
+      {% for field in form %}
+        <div class="field field-{{ field.name }}">
+          {{ field.label_tag }}
+          {{ field }}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
       <button type="submit">Submit complaint <span aria-hidden="true">→</span></button>
     </form>
   </section>
