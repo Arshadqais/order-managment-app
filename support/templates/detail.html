@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="back"><a href="{% url 'queue' %}">← Complaint queue</a></p>
+<div class="heading">
+  <div><p class="eyebrow">COMPLAINT #{{ ticket.pk }}</p><h1>{{ ticket.customer }}</h1></div>
+  <span class="badge">{{ ticket.get_mode_display|default:"Awaiting review" }}</span>
+</div>
+<div class="detail">
+  <section class="panel">
+    <h2>Complaint details</h2>
+    <dl>
+      <dt>Received</dt><dd>{{ ticket.created_at|date:"d M Y, H:i" }}</dd>
+      <dt>Phone</dt><dd>{{ ticket.phone }}</dd>
+      <dt>Service address</dt><dd>{{ ticket.address }}</dd>
+      <dt>Description</dt><dd class="preserve">{{ ticket.description }}</dd>
+    </dl>
+  </section>
+  <section class="panel">
+    {% if ticket.completed_at %}
+      <h2>Completed work</h2>
+      <dl>
+        <dt>Employee</dt><dd>{{ ticket.completed_by.username }}</dd>
+        <dt>Completed</dt><dd>{{ ticket.completed_at|date:"d M Y, H:i" }}</dd>
+        <dt>Work performed</dt><dd class="preserve">{{ ticket.resolution }}</dd>
+      </dl>
+    {% elif user.is_staff %}
+      <h2>Route complaint</h2>
+      <form method="post">
+        {% csrf_token %}<input type="hidden" name="action" value="route">
+        {{ mode_form.as_p }}<button>Save service type</button>
+      </form>
+    {% elif ticket.mode %}
+      <h2>Record completed work</h2>
+      <form method="post">
+        {% csrf_token %}<input type="hidden" name="action" value="complete">
+        {{ completion_form.as_p }}<button>Mark completed</button>
+      </form>
+    {% else %}
+      <h2>Awaiting admin review</h2>
+      <p>An admin will choose the service type before work can be marked complete.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

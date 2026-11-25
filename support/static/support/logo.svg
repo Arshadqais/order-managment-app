@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 336 76">
+  <defs><linearGradient id="brand" x2="1" y2="1"><stop stop-color="#ff7800"/><stop offset="1" stop-color="#d20016"/></linearGradient></defs>
+  <path fill="url(#brand)" d="M2 66 26 8h33l7 11H36L16 66zm19 0 17-40h28l20 40H72l-5-10H43l-4 10zm25-21h16l-4-8h-9z"/>
+  <text x="97" y="30" font-family="Arial,sans-serif" font-size="23" font-weight="700" fill="#17181b">Future Advanced</text>
+  <text x="98" y="50" font-family="Arial,sans-serif" font-size="16" letter-spacing="5" fill="#17181b">Technologies</text>
+  <text x="99" y="65" font-family="Arial,sans-serif" font-size="9" letter-spacing="1.4" font-weight="700" fill="#b71d2b">ONE STOP IT SOLUTIONS</text>
+</svg>

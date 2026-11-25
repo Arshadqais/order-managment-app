@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="heading">
+  <div>
+    <p class="eyebrow">{% if user.is_staff %}ADMIN PORTAL{% else %}EMPLOYEE PORTAL{% endif %}</p>
+    <h1>{% if history %}Work history{% else %}Complaint queue{% endif %}</h1>
+  </div>
+  {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Manage accounts</a>{% endif %}
+</div>
+<nav class="tabs" aria-label="Ticket views">
+  <a href="{% url 'queue' %}" {% if not history %}aria-current="page"{% endif %}>Open complaints</a>
+  <a href="?view=history" {% if history %}aria-current="page"{% endif %}>{% if user.is_staff %}Work history{% else %}My completed work{% endif %}</a>
+</nav>
+{% if history and user.is_staff %}
+<form class="filters panel" method="get">
+  <input type="hidden" name="view" value="history">
+  {{ filters.as_p }}
+  <button>Filter history</button>
+</form>
+{% endif %}
+<section aria-label="Complaints">
+  {% for ticket in page %}
+  <article class="ticket">
+    <div>
+      <p class="eyebrow">#{{ ticket.pk }} · {{ ticket.created_at|date:"d M Y, H:i" }}</p>
+      <h2><a href="{% url 'ticket' ticket.pk %}">{{ ticket.customer }}</a></h2>
+      <p>{{ ticket.description|truncatechars:150 }}</p>
+      {% if history %}<p>Completed by {{ ticket.completed_by.username }} · {{ ticket.completed_at|date:"d M Y, H:i" }}</p>{% endif %}
+    </div>
+    <span class="badge">{{ ticket.get_mode_display|default:"Awaiting review" }}</span>
+  </article>
+  {% empty %}<p class="panel">No complaints in this view.</p>{% endfor %}
+</section>
+{% if page.has_other_pages %}
+<nav class="pagination" aria-label="Pagination">
+  {% if page.has_previous %}<a href="{% querystring page=page.previous_page_number %}">Previous</a>{% endif %}
+  <span>{{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="{% querystring page=page.next_page_number %}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

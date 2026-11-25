@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Support Desk{% endblock %} | Future Advanced Technologies</title>
+  <link rel="stylesheet" href="{% static 'support/app.css' %}">
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <a href="{% url 'complaint' %}" aria-label="Future Advanced Technologies home">
+      <img class="logo" src="{% static 'support/logo.svg' %}" alt="Future Advanced Technologies">
+    </a>
+    <nav aria-label="Main navigation">
+      {% if user.is_authenticated %}
+        <a href="{% url 'queue' %}">Support desk</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="quiet">Sign out</button></form>
+      {% else %}
+        <a href="{% url 'employee-login' %}">Employee</a>
+        <a href="{% url 'admin-login' %}">Admin</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+  {% for message in messages %}<p class="notice {{ message.tags }}" role="status">{{ message }}</p>{% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="wrap">Future Advanced Technologies · IT Support</footer>
+</body>
+</html>

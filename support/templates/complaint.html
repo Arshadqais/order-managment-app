@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Submit a complaint{% endblock %}
+{% block content %}
+<div class="intake">
+  <section class="intro">
+    <p class="eyebrow">CUSTOMER SUPPORT</p>
+    <h1>How can we help?</h1>
+    <p>Report a Wi-Fi, network, or other IT issue. Our support team will review your complaint and decide whether it can be resolved remotely or needs a visit.</p>
+  </section>
+  <section class="panel">
+    <h2>Submit a complaint</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Submit complaint <span aria-hidden="true">→</span></button>
+    </form>
+  </section>
+</div>
+{% endblock %}
