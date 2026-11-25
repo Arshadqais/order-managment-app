@@ -115,6 +115,7 @@ def ticket_detail(request, pk):
                 updated = open_ticket.exclude(mode="").update(
                     completed_at=timezone.now(), completed_by=request.user,
                     resolution=completion_form.cleaned_data["resolution"],
+                    sms_status=Ticket.SmsStatus.QUEUED,
                 )
                 return action_result(request, pk, updated, "Work recorded.")
         else:

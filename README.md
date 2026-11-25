@@ -44,3 +44,13 @@ python manage.py migrate
 Set this path in the production service's environment when configuring it to start on boot. If the app already has data, use a SQLite backup to move the existing database to the new path before switching the service. Keep a separate, private backup and periodically verify that it can be restored.
 
 For phones on the office network, configure an internal HTTPS hostname. For customers using mobile data or another network, configure a public HTTPS hostname routed to the web app on the office machine. Keep the database file private in either setup. The office machine and its network connection must be available whenever customers need to submit complaints.
+
+## Send customers an SMS when work is completed
+
+Run `python manage.py migrate` after updating the app. Each newly completed complaint queues one SMS with its reference number. The existing software workflow saves completion and queues the SMS together. Pakistani mobile numbers in `03XXXXXXXXX` format and international numbers with a country code are supported. Existing completed complaints are not queued retroactively.
+
+Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` in the office machine's private service environment. Use a Twilio sender approved for your destination and verify the account can send to Pakistani mobile numbers, including any applicable geographic permissions or sender registration. Keep credentials outside Git. The SMS job needs outbound HTTPS access to `api.twilio.com`.
+
+Run `python manage.py send_completion_sms` once to process the queue. For automatic sending, schedule it to run every minute using Windows Task Scheduler or the office machine's service scheduler. Use the same Django settings and `DJANGO_DB_PATH` as the web app, and configure a single job instance so runs do not overlap. The job processes up to 50 queued notifications per run.
+
+The admin can view the SMS status on each completed complaint. Provider acceptance confirms submission, and handset delivery requires checking the provider's message logs. A rejected, unconfirmed, or interrupted send is not retried automatically. Check the provider logs before attempting any resend to avoid sending duplicate messages.

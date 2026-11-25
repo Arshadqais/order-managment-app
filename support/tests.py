@@ -1,4 +1,10 @@
+import os
+from io import StringIO
+from unittest.mock import patch
+from urllib.parse import parse_qs
+
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -42,6 +48,22 @@ class SupportWorkflowTests(TestCase):
         self.assertEqual(ticket.completed_by, self.employee)
         self.assertEqual(ticket.mode, "onsite")
         self.assertEqual(ticket.resolution, "Replaced faulty router.")
+        self.assertEqual(ticket.sms_status, Ticket.SmsStatus.QUEUED)
+        credentials = {
+            "TWILIO_ACCOUNT_SID": "AC" + "0" * 32,
+            "TWILIO_AUTH_TOKEN": "test-token",
+            "TWILIO_FROM_NUMBER": "+15005550006",
+        }
+        with patch.dict(os.environ, credentials), patch("support.sms.urlopen") as send:
+            send.return_value.__enter__.return_value.status = 201
+            call_command("send_completion_sms", stdout=StringIO())
+            call_command("send_completion_sms", stdout=StringIO())
+            send.assert_called_once()
+            message = parse_qs(send.call_args.args[0].data.decode())
+            self.assertEqual(message["To"], ["+923001234567"])
+            self.assertIn(f"#{ticket.pk}", message["Body"][0])
+        ticket.refresh_from_db()
+        self.assertEqual(ticket.sms_status, Ticket.SmsStatus.ACCEPTED)
         self.assertContains(self.client.get(reverse("queue"), {"view": "history"}), "Sample Customer")
         self.client.force_login(self.other)
         self.assertEqual(self.client.get(detail).status_code, 404)

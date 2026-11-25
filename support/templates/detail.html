@@ -22,6 +22,9 @@
         <dt>Employee</dt><dd>{{ ticket.completed_by.username }}</dd>
         <dt>Completed</dt><dd>{{ ticket.completed_at|date:"d M Y, H:i" }}</dd>
         <dt>Work performed</dt><dd class="preserve">{{ ticket.resolution }}</dd>
+        {% if user.is_staff %}
+          <dt>Customer SMS</dt><dd>{{ ticket.get_sms_status_display|default:"No notification recorded" }}</dd>
+        {% endif %}
       </dl>
     {% elif user.is_staff %}
       <h2>Route complaint</h2>

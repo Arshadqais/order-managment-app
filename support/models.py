@@ -7,6 +7,14 @@ class Ticket(models.Model):
         REMOTE = "remote", "Remote / office support"
         ONSITE = "onsite", "On-site visit"
 
+    class SmsStatus(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        SENDING = "sending", "Sending or awaiting confirmation"
+        ACCEPTED = "accepted", "Accepted by SMS provider"
+        FAILED = "failed", "Rejected by SMS provider"
+        INVALID = "invalid", "Invalid customer phone number"
+        UNKNOWN = "unknown", "Delivery submission unconfirmed"
+
     customer = models.CharField(max_length=120, verbose_name="Full name")
     phone = models.CharField(max_length=35, verbose_name="Phone number")
     address = models.CharField(max_length=300, verbose_name="Service address")
@@ -18,6 +26,8 @@ class Ticket(models.Model):
     )
     completed_at = models.DateTimeField(null=True, db_index=True)
     resolution = models.TextField(max_length=2000, blank=True)
+
+    sms_status = models.CharField(max_length=10, choices=SmsStatus.choices, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-created_at", "-pk"]
