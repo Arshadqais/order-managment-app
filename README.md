@@ -28,3 +28,19 @@ Run the automated workflow checks with `python manage.py test`.
 Host the Django WSGI app (`support.wsgi:application`) behind an HTTPS reverse proxy using a production WSGI server. Set `DJANGO_SECRET_KEY` to a strong random value in your host's secret settings. Set `DJANGO_ALLOWED_HOSTS` to the public hostname, with comma-separated values for multiple hosts. Leave `DJANGO_DEBUG` unset. Run migrations and `python manage.py collectstatic --noinput`, then configure the proxy to serve `staticfiles/` at `/static/`. Set `DJANGO_TRUST_HTTPS_PROXY=1` only when the trusted proxy strips and replaces the incoming `X-Forwarded-Proto` header.
 
 The app uses SQLite. Use a single deployment instance with a persistent volume, point `DJANGO_DB_PATH` to the database file on that volume, and configure regular SQLite backups. Keep the volume and backups private because they contain customer contact details and work records. Public submissions and sign-ins are rate-limited using the client address seen by Django. If deployed behind a proxy, configure client-aware rate limits at the edge. Share the public HTTPS root URL with customers after deployment.
+
+## Keep the database on the admin's computer
+
+Run the app on the admin's computer or a dedicated office machine managed by the admin. By default Django creates `support.sqlite3` in the checkout when you run migrations. For regular office use, place the database in a private folder outside the checkout so replacing the code will preserve complaint history. Set the same `DJANGO_DB_PATH` for migrations and for the running app.
+
+For example, in Windows PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\FATSupport" | Out-Null
+$env:DJANGO_DB_PATH = "$env:LOCALAPPDATA\FATSupport\support.sqlite3"
+python manage.py migrate
+```
+
+Set this path in the production service's environment when configuring it to start on boot. If the app already has data, use a SQLite backup to move the existing database to the new path before switching the service. Keep a separate, private backup and periodically verify that it can be restored.
+
+For phones on the office network, configure an internal HTTPS hostname. For customers using mobile data or another network, configure a public HTTPS hostname routed to the web app on the office machine. Keep the database file private in either setup. The office machine and its network connection must be available whenever customers need to submit complaints.
