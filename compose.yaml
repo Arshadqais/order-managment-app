@@ -1,0 +1,77 @@
+name: fat-support
+
+x-django-env: &django-env
+  DJANGO_ALLOWED_HOSTS: ${SUPPORT_HOST:?Set SUPPORT_HOST in .env}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
+  DJANGO_DB_PATH: /data/support.sqlite3
+
+services:
+  web:
+    build: .
+    image: fat-support:local
+    restart: unless-stopped
+    environment: *django-env
+    command:
+      - sh
+      - -ec
+      - |
+        python manage.py migrate --noinput
+        python manage.py collectstatic --noinput
+        exec waitress-serve --listen=0.0.0.0:8000 --trusted-proxy='*' --trusted-proxy-headers='x-forwarded-for x-forwarded-proto' support.wsgi:application
+    volumes:
+      - database:/data
+      - static:/app/staticfiles
+    networks:
+      - backend
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      SUPPORT_HOST: ${SUPPORT_HOST:?Set SUPPORT_HOST in .env}
+      NO_PROXY: web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static:/srv/static:ro
+      - certificates:/data
+      - caddy_config:/config
+    networks:
+      - backend
+      - default
+
+  sms:
+    image: fat-support:local
+    restart: unless-stopped
+    profiles: [sms]
+    environment:
+      <<: *django-env
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+    depends_on:
+      - web
+    command:
+      - sh
+      - -c
+      - |
+        while true; do
+          python manage.py send_completion_sms
+          sleep 60
+        done
+    volumes:
+      - database:/data
+
+networks:
+  backend:
+    internal: true
+
+volumes:
+  database:
+  static:
+  certificates:
+  caddy_config:

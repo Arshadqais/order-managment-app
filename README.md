@@ -25,6 +25,8 @@ Run the automated workflow checks with `python manage.py test`.
 
 ## Deploy
 
+For a ready-to-run office setup with HTTPS, a local SQLite volume, and optional SMS, see the [Docker deployment guide](deploy/README.md).
+
 Host the Django WSGI app (`support.wsgi:application`) behind an HTTPS reverse proxy using a production WSGI server. Set `DJANGO_SECRET_KEY` to a strong random value in your host's secret settings. Set `DJANGO_ALLOWED_HOSTS` to the public hostname, with comma-separated values for multiple hosts. Leave `DJANGO_DEBUG` unset. Run migrations and `python manage.py collectstatic --noinput`, then configure the proxy to serve `staticfiles/` at `/static/`. Set `DJANGO_TRUST_HTTPS_PROXY=1` only when the trusted proxy strips and replaces the incoming `X-Forwarded-Proto` header.
 
 The app uses SQLite. Use a single deployment instance with a persistent volume, point `DJANGO_DB_PATH` to the database file on that volume, and configure regular SQLite backups. Keep the volume and backups private because they contain customer contact details and work records. Public submissions and sign-ins are rate-limited using the client address seen by Django. If deployed behind a proxy, configure client-aware rate limits at the edge. Share the public HTTPS root URL with customers after deployment.

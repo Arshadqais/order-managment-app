@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!manage.py
+!requirements.txt
+!deploy/
+!deploy/requirements.txt
+!support/
+!support/**
+**/__pycache__
