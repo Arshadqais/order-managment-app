@@ -16,13 +16,14 @@
   <section class="panel complaint-panel" aria-labelledby="complaint-title">
     <h2 id="complaint-title">Submit a complaint</h2>
     <p class="form-intro">Share your contact details and describe the issue.</p>
-    <form method="post" class="complaint-form">
+    <form method="post" enctype="multipart/form-data" class="complaint-form">
       {% csrf_token %}
       {{ form.non_field_errors }}
       {% for field in form %}
         <div class="field field-{{ field.name }}">
           {{ field.label_tag }}
           {{ field }}
+          {% if field.help_text %}<small class="field-help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>{% endif %}
           {{ field.errors }}
         </div>
       {% endfor %}

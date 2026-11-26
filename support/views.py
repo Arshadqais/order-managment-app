@@ -5,17 +5,17 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_safe
 
 from .forms import ComplaintForm, CompletionForm, HistoryFilter, ModeForm
-from .models import RateBucket, Ticket
+from .models import ComplaintPhoto, RateBucket, Ticket
 
 
 def rate_limited(request, scope, limit, minutes):
@@ -36,12 +36,16 @@ def rate_limited(request, scope, limit, minutes):
 @never_cache
 @require_http_methods(["GET", "POST"])
 def complaint(request):
-    form = ComplaintForm(request.POST if request.method == "POST" else None)
+    form = ComplaintForm()
     if request.method == "POST":
         if rate_limited(request, "complaint", 20, 10):
             return HttpResponse("Too many requests. Please try again in a few minutes.", status=429)
+        form = ComplaintForm(request.POST, request.FILES)
         if form.is_valid():
-            ticket = form.save()
+            with transaction.atomic():
+                ticket = form.save()
+                if photo := form.cleaned_data["photo"]:
+                    ComplaintPhoto.objects.create(ticket=ticket, image=photo)
             messages.success(request, f"Complaint submitted. Your reference is #{ticket.pk}.")
             return redirect("complaint")
     return render(request, "complaint.html", {"form": form})
@@ -90,15 +94,28 @@ def queue(request):
     return render(request, "queue.html", {"page": page, "history": history, "filters": filters})
 
 
+def visible_tickets(user):
+    tickets = Ticket.objects.all()
+    if not user.is_staff:
+        tickets = tickets.filter(Q(completed_at__isnull=True) | Q(completed_by=user))
+    return tickets
+
+
+@never_cache
+@login_required(login_url="employee-login")
+@require_safe
+def complaint_photo(request, pk):
+    photo = get_object_or_404(
+        ComplaintPhoto, ticket_id=pk, ticket__in=visible_tickets(request.user)
+    )
+    return HttpResponse(photo.image, content_type="image/jpeg")
+
+
 @never_cache
 @login_required(login_url="employee-login")
 @require_http_methods(["GET", "POST"])
 def ticket_detail(request, pk):
-    tickets = Ticket.objects.select_related("completed_by")
-    if not request.user.is_staff:
-        from django.db.models import Q
-        tickets = tickets.filter(Q(completed_at__isnull=True) | Q(completed_by=request.user))
-    ticket = get_object_or_404(tickets, pk=pk)
+    ticket = get_object_or_404(visible_tickets(request.user).select_related("completed_by"), pk=pk)
     open_ticket = Ticket.objects.filter(pk=pk, completed_at__isnull=True)
     mode_form = ModeForm(initial={"mode": ticket.mode})
     completion_form = CompletionForm()
@@ -122,6 +139,7 @@ def ticket_detail(request, pk):
             return HttpResponse(status=403)
     return render(request, "detail.html", {
         "ticket": ticket, "mode_form": mode_form, "completion_form": completion_form,
+        "has_photo": ComplaintPhoto.objects.filter(ticket=ticket).exists(),
     })
 
 

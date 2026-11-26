@@ -4,6 +4,10 @@
         file_server
     }
 
+    request_body {
+        max_size 6MB
+    }
+
     handle {
         reverse_proxy web:8000
     }

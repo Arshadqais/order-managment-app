@@ -1,6 +1,6 @@
 # Future Advanced Technologies Support Desk
 
-Customers submit IT complaints from a mobile-friendly public page. Admins review incoming complaints and choose remote/office support or an on-site visit. Every employee can see open complaints and record the work they completed. The admin history can be filtered by employee username and completion dates, displayed in Pakistan time.
+Customers submit IT complaints from a mobile-friendly public page and can attach one JPEG, PNG or WebP image up to 5 MB. Only signed-in staff who can access the complaint can see the photo. Attachments are stored in SQLite and included in database backups. Admins review incoming complaints and choose remote/office support or an on-site visit. Every employee can see open complaints and record the work they completed. The admin history can be filtered by employee username and completion dates, displayed in Pakistan time.
 
 ## Run locally
 

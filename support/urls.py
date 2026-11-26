@@ -12,6 +12,7 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(next_page="/"), name="logout"),
     path("desk/", views.queue, name="queue"),
     path("desk/<int:pk>/", views.ticket_detail, name="ticket"),
+    path("desk/<int:pk>/photo/", views.complaint_photo, name="complaint-photo"),
     path("accounts/login/", RedirectView.as_view(pattern_name="admin-login")),
     path("accounts/", admin.site.urls),
 ]

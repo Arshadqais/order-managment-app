@@ -33,6 +33,11 @@ class Ticket(models.Model):
         ordering = ["-created_at", "-pk"]
 
 
+class ComplaintPhoto(models.Model):
+    ticket = models.OneToOneField(Ticket, on_delete=models.CASCADE, related_name="photo")
+    image = models.BinaryField()
+
+
 class RateBucket(models.Model):
     key = models.CharField(max_length=128, primary_key=True)
     hits = models.PositiveIntegerField(default=0)

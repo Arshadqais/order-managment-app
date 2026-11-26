@@ -1,15 +1,18 @@
 import os
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest.mock import patch
 from urllib.parse import parse_qs
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Ticket
+from PIL import Image
+
+from .models import ComplaintPhoto, Ticket
 
 
 class SupportWorkflowTests(TestCase):
@@ -89,3 +92,44 @@ class SupportWorkflowTests(TestCase):
             self.assertEqual(self.client.post(reverse("complaint")).status_code, 200)
         self.assertEqual(self.client.post(reverse("complaint")).status_code, 429)
         self.assertFalse(Ticket.objects.exists())
+
+    def test_photo_upload_and_staff_access(self):
+        image = BytesIO()
+        Image.new("RGB", (80, 40), "red").save(image, "PNG")
+        response = self.client.post(reverse("complaint"), {
+            "customer": "Sample Customer", "phone": "03001234567",
+            "address": "Office 7", "description": "Wi-Fi disconnects",
+            "photo": SimpleUploadedFile("screenshot.png", image.getvalue(), "image/png"),
+        })
+        self.assertRedirects(response, reverse("complaint"))
+        ticket = Ticket.objects.get()
+        url = reverse("complaint-photo", args=[ticket.pk])
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.client.force_login(self.other)
+        self.assertContains(self.client.get(reverse("ticket", args=[ticket.pk])), "Attached photo")
+        response = self.client.get(url)
+        self.assertEqual(response["Content-Type"], "image/jpeg")
+        self.assertIn("no-store", response["Cache-Control"])
+        with Image.open(BytesIO(response.content)) as photo:
+            self.assertEqual(photo.size, (80, 40))
+        Ticket.objects.filter(pk=ticket.pk).update(
+            completed_at=timezone.now(), completed_by=self.employee,
+        )
+        self.assertEqual(self.client.get(url).status_code, 404)
+        for user in (self.employee, self.admin):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_invalid_or_oversized_photo_rejects_complaint(self):
+        for photo, error in [
+            (b"not an image", "Upload a valid JPEG, PNG or WebP image."),
+            (b"x" * (5 * 1024 * 1024 + 1), "Choose a photo that is 5 MB or smaller."),
+        ]:
+            response = self.client.post(reverse("complaint"), {
+                "customer": "Sample Customer", "phone": "03001234567",
+                "address": "Office 7", "description": "Wi-Fi disconnects",
+                "photo": SimpleUploadedFile("screenshot.png", photo, "image/png"),
+            })
+            self.assertContains(response, error)
+        self.assertFalse(Ticket.objects.exists())
+        self.assertFalse(ComplaintPhoto.objects.exists())

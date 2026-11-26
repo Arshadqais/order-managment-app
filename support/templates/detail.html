@@ -14,6 +14,12 @@
       <dt>Service address</dt><dd>{{ ticket.address }}</dd>
       <dt>Description</dt><dd class="preserve">{{ ticket.description }}</dd>
     </dl>
+    {% if has_photo %}
+      <h3>Attached photo</h3>
+      <a href="{% url 'complaint-photo' ticket.pk %}">
+        <img class="complaint-photo" src="{% url 'complaint-photo' ticket.pk %}" alt="View the customer's photo at full size">
+      </a>
+    {% endif %}
   </section>
   <section class="panel">
     {% if ticket.completed_at %}
