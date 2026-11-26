@@ -11,7 +11,8 @@
     <dl>
       <dt>Received</dt><dd>{{ ticket.created_at|date:"d M Y, H:i" }}</dd>
       <dt>Phone</dt><dd>{{ ticket.phone }}</dd>
-      <dt>Service address</dt><dd>{{ ticket.address }}</dd>
+      {% if ticket.email %}<dt>Email address</dt><dd>{{ ticket.email }}</dd>{% endif %}
+      <dt>Property / office number</dt><dd>{{ ticket.address }}</dd>
       <dt>Description</dt><dd class="preserve">{{ ticket.description }}</dd>
     </dl>
     {% if has_photo %}
@@ -29,6 +30,7 @@
         <dt>Completed</dt><dd>{{ ticket.completed_at|date:"d M Y, H:i" }}</dd>
         <dt>Work performed</dt><dd class="preserve">{{ ticket.resolution }}</dd>
         {% if user.is_staff %}
+          <dt>Customer email</dt><dd>{{ ticket.get_email_status_display|default:"No notification recorded" }}</dd>
           <dt>Customer SMS</dt><dd>{{ ticket.get_sms_status_display|default:"No notification recorded" }}</dd>
         {% endif %}
       </dl>

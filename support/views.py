@@ -133,6 +133,7 @@ def ticket_detail(request, pk):
                     completed_at=timezone.now(), completed_by=request.user,
                     resolution=completion_form.cleaned_data["resolution"],
                     sms_status=Ticket.SmsStatus.QUEUED,
+                    email_status=Ticket.EmailStatus.QUEUED if ticket.email else "",
                 )
                 return action_result(request, pk, updated, "Work recorded.")
         else:

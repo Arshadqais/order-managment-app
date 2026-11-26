@@ -1,3 +1,4 @@
+import re
 from io import BytesIO
 
 from django import forms
@@ -7,6 +8,25 @@ from .models import Ticket
 
 
 class ComplaintForm(forms.ModelForm):
+    email = forms.EmailField(
+        label="Email address",
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autocomplete": "email", "placeholder": "you@example.com"}),
+    )
+
+    def clean_phone(self):
+        number = re.sub(r"[\s().-]", "", self.cleaned_data["phone"])
+        if number.startswith("00971"):
+            number = "+" + number[2:]
+        elif number.startswith("0"):
+            number = "+971" + number[1:]
+        elif number and not number.startswith("+"):
+            number = "+971" + number
+
+        if not re.fullmatch(r"\+971[1-9][0-9]{7,8}", number):
+            raise forms.ValidationError("Enter a UAE phone number, for example +971 50 123 4567.")
+        return number
+
     photo = forms.FileField(
         required=False,
         label="Photo or screenshot (optional)",
@@ -36,11 +56,11 @@ class ComplaintForm(forms.ModelForm):
 
     class Meta:
         model = Ticket
-        fields = ["customer", "phone", "address", "description", "photo"]
+        fields = ["customer", "phone", "email", "address", "description", "photo"]
         widgets = {
             "customer": forms.TextInput(attrs={"autocomplete": "name", "placeholder": "e.g. Ali Khan"}),
-            "phone": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel", "placeholder": "e.g. 0300 1234567"}),
-            "address": forms.TextInput(attrs={"autocomplete": "street-address", "placeholder": "Building, street and area"}),
+            "phone": forms.TextInput(attrs={"type": "tel", "autocomplete": "tel", "placeholder": "e.g. +971 50 123 4567"}),
+            "address": forms.TextInput(attrs={"placeholder": "e.g. Tower B, Office 204"}),
             "description": forms.Textarea(attrs={"rows": 4, "placeholder": "Tell us what happened and when it started."}),
         }
 

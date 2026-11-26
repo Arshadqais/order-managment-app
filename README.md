@@ -56,3 +56,13 @@ Configure `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER` in
 Run `python manage.py send_completion_sms` once to process the queue. For automatic sending, schedule it to run every minute using Windows Task Scheduler or the office machine's service scheduler. Use the same Django settings and `DJANGO_DB_PATH` as the web app, and configure a single job instance so runs do not overlap. The job processes up to 50 queued notifications per run.
 
 The admin can view the SMS status on each completed complaint. Provider acceptance confirms submission, and handset delivery requires checking the provider's message logs. A rejected, unconfirmed, or interrupted send is not retried automatically. Check the provider logs before attempting any resend to avoid sending duplicate messages.
+
+## Send customers an email when work is completed
+
+New complaints require a customer email address, a UAE phone number, and a property or office number. Existing complaints still open and complete normally. A complaint without an email address has no completion email queued.
+
+Run `python manage.py migrate` when updating a local installation. Configure `EMAIL_HOST`, `EMAIL_PORT` (default `587`), `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `DEFAULT_FROM_EMAIL` in the deployment environment for an SMTP provider supporting STARTTLS. Use the provider's verified sender address and keep credentials private.
+
+For Docker Compose, place the settings in `.env` and run `docker compose --profile email up -d --build`. If you also use SMS, include `--profile sms` before `up`. The email worker checks the local database once a minute. For a native installation, schedule `python manage.py send_completion_email` once a minute using the same database settings as the app.
+
+The admin can see the email status in each completed complaint. Acceptance means the SMTP server accepted the message. If a send is unconfirmed, consult the provider logs before any resend.
